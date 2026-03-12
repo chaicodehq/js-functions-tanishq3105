@@ -46,16 +46,74 @@
  */
 export function createFilter(field, operator, value) {
   // Your code here
+
+  const greaterThan = (obj) => {
+    return obj[field] > value;
+  };
+  const lessThan = (obj) => {
+    return obj[field] < value;
+  };
+  const greaterThanEqualTo = (obj) => {
+    return obj[field] >= value;
+  };
+  const lessThanEqualTo = (obj) => {
+    return obj[field] <= value;
+  };
+  const equals = (obj) => {
+    return obj[field] === value;
+  };
+  const none = () => false;
+  // Operators: ">", "<", ">=", "<=", "==="
+  return operator === ">"
+    ? greaterThan
+    : operator === "<"
+      ? lessThan
+      : operator === ">="
+        ? greaterThanEqualTo
+        : operator === "<="
+          ? lessThanEqualTo
+          : operator === "==="
+            ? equals
+            : none;
 }
 
 export function createSorter(field, order = "asc") {
-  // Your code here
+  return (a, b) => {
+    const valA = a[field];
+    const valB = b[field];
+
+    let result;
+
+    if (typeof valA === "number" && typeof valB === "number") {
+      result = valA - valB;
+    } else {
+      result = String(valA).localeCompare(String(valB));
+    }
+
+    return order === "asc" ? result : -result;
+  };
 }
 
 export function createMapper(fields) {
   // Your code here
+  const mapper = (obj) => {
+    const newObj = {};
+    for (let field of fields) {
+      if (!Object.hasOwn(obj, field)) return null;
+      else if (Object.hasOwn(obj, field)) newObj[field] = obj[field];
+    }
+
+    return newObj;
+  };
+  return mapper;
 }
 
 export function applyOperations(data, ...operations) {
   // Your code here
+  if (!Array.isArray(data)) return [];
+  let ans = data;
+  for (let operation of operations) {
+    ans = operation(ans);
+  }
+  return ans;
 }

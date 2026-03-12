@@ -65,16 +65,93 @@
  */
 export function createElection(candidates) {
   // Your code here
+  const votes = {};
+  const registered = new Set();
+  const voted = new Set();
+  candidates.forEach((e) => (votes[e.id] = 0));
+  const registerVoter = (voter) => {
+    if (!voter || !voter.id || voter.age < 18 || registered.has(voter.id))
+      return false;
+    registered.add(voter.id);
+    return true;
+  };
+
+  //  *
+  const castVote = (voterId, candidateId, onSucces, onError) => {
+    if (!registered.has(voterId)) return onError("voter not registered");
+    if (voted.has(voterId)) return onError("voter already voted");
+    if (!(candidateId in votes)) return onError("candidate doesnt exist");
+    votes[candidateId]++;
+    voted.add(voterId);
+    return onSucces({ voterId, candidateId });
+  };
+
+  const getResults = (sortFn) => {
+    const votingArray = [...candidates];
+    votingArray.forEach((votess) => (votess.votes = votes[votess.id]));
+
+    if (!sortFn) {
+      votingArray.sort((a, b) => b.votes - a.votes);
+    } else {
+      votingArray.sort(sortFn);
+    }
+    return votingArray;
+  };
+
+  const getWinner = () => {
+    let maxVotes = 0,
+      winningParty;
+    for (const [key, value] of Object.entries(votes)) {
+      if (value > maxVotes) {
+        maxVotes = value;
+        winningParty = key;
+      }
+    }
+    if (maxVotes === 0) return null;
+    const cand = candidates.find((candidate) => candidate.id === winningParty);
+    return cand;
+  };
+  return {
+    registerVoter,
+    getResults,
+    getWinner,
+    castVote,
+  };
 }
 
 export function createVoteValidator(rules) {
   // Your code here
+
+  return function (voter) {
+    if (!voter.id || !voter.name || !voter.age)
+      return { valid: false, reason: "object does not have required field" };
+    if (voter.age < 18)
+      return { valid: false, reason: "min age required is 18" };
+    return { valid: true, reason: "all conditions passed" };
+  };
 }
 
 export function countVotesInRegions(regionTree) {
-  // Your code here
+  if (!regionTree || typeof regionTree !== "object") return 0;
+
+  let total = regionTree.votes || 0;
+
+  if (Array.isArray(regionTree.subRegions)) {
+    for (let region of regionTree.subRegions) {
+      total += countVotesInRegions(region);
+    }
+  }
+
+  return total;
 }
 
 export function tallyPure(currentTally, candidateId) {
   // Your code here
+  const copy = { ...currentTally };
+  if (candidateId in currentTally) {
+    copy[candidateId]++;
+  } else {
+    copy[candidateId] = 1;
+  }
+  return copy;
 }
